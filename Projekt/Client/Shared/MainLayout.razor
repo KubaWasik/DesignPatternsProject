@@ -1,0 +1,38 @@
+﻿@inherits FluxorLayout
+@using Fluxor.Blazor.Web.Components
+@using Fluxor.Persist.Middleware
+@using Projekt.Client.Stores
+
+<Layout>
+    <LayoutHeader>
+        <nav class="navbar navbar-dark bg-dark">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="d-inline-block align-top fas fa-pizza-slice mr-2"></i>
+                Pizza store
+            </a>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="#">My orders</a>
+                </li>
+            </ul>
+        </nav>
+    </LayoutHeader>
+    <LayoutContent>
+        <div class="d-flex flex-column justify-content-center align-items-center p-4">
+            @Body
+        </div>
+    </LayoutContent>
+</Layout>
+
+@code
+{ protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        this.SubscribeToAction<InitializePersistMiddlewareResultSuccessAction>(result =>
+        {
+            Console.WriteLine($"**** State rehydrated**");
+            this.StateHasChanged();// we now have state, we can re-render to reflect binding changes
+    });
+    }
+}

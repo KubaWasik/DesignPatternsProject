@@ -1,0 +1,66 @@
+﻿@page "/menu"
+@using System.Text.Json
+@using Projekt.Shared.ViewModels
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+<SpinLoader IsLoading="@(Pizzas.Count == 0)">
+    <LoadingTemplate>
+        <Container Display="Display.Flex" Fluid="true" Style="height: 85vh;">
+            <Chase Size="10rem" Center="true" />
+        </Container>
+    </LoadingTemplate>
+    <ContentTemplate>
+        <div style="padding-left: 4rem; padding-right: 4rem;">
+            @foreach (var row in Pizzas)
+            {
+                <CardDeck Style="margin-bottom: 2rem;">
+                    @foreach (var pizza in row)
+                    {
+                        <Card Style="max-width: 20vw">
+                            <CardImage Class="p-3" Source="/assets/images/pizza.png" Alt="Pizza image"></CardImage>
+                            <CardBody Style="display: flex; flex-direction: column">
+                                <CardTitle Size="5">@pizza.Name</CardTitle>
+                                <CardText Style="flex-grow: 1; margin-bottom: 1rem;">
+                                    @pizza.Description
+                                </CardText>
+                                <Button Outline="true" Color="Color.Secondary" @onclick=@(() => OrderPizza(pizza.Id))>Order</Button>
+                            </CardBody>
+                        </Card>
+                    }
+                </CardDeck>
+            }
+        </div>
+    </ContentTemplate>
+</SpinLoader>
+
+@code {
+
+    private List<List<PizzaVM>> Pizzas = new List<List<PizzaVM>>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var data = await HttpClient.GetFromJsonAsync<List<PizzaVM>>("api/pizza/getAll");
+
+        var rows = data.Count / 3;
+
+        var lastRow = data.Count % 3 > 0;
+
+        for (int i = 0; i < rows; i++)
+        {
+            Pizzas.Add(data.GetRange(i * 3, 3).ToList());
+        }
+
+        if (lastRow)
+        {
+            Pizzas.Add(data.GetRange(rows * 3, data.Count % 3).ToList());
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private void OrderPizza(int pizzaId)
+    {
+        NavigationManager.NavigateTo($"/order/{pizzaId}");
+    }
+}

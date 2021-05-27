@@ -1,0 +1,28 @@
+﻿@page "/order/{PizzaId:int}"
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@using Fluxor
+@using Microsoft.AspNetCore.Components
+@using Projekt.Client.Stores.CounterUseCase
+
+<h3>Order</h3>
+
+<p>Counter: @CounterState.Value.ClickCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@code {
+    [Parameter]
+    public int PizzaId { get; set; }
+
+    [Inject]
+    private IState<CounterState> CounterState { get; set; }
+
+    [Inject]
+    public IDispatcher Dispatcher { get; set; }
+
+    private void IncrementCount()
+    {
+        var action = new IncrementCounterAction();
+        Dispatcher.Dispatch(action);
+    }
+}

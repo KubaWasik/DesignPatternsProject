@@ -1,0 +1,22 @@
+<Fluxor.Blazor.Web.StoreInitializer />
+
+<Blazorise.ThemeProvider Theme="@Theme">
+    <Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p>Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</Blazorise.ThemeProvider>
+
+@code {
+    private Theme Theme = new Theme
+    {
+        IsGradient = true,
+        IsRounded = false,
+    };
+}
