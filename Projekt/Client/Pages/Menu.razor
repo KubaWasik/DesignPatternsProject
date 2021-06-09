@@ -1,5 +1,7 @@
 ﻿@page "/menu"
-@using System.Text.Json
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@using Fluxor
+@using Projekt.Client.Stores.NameUseCase
 @using Projekt.Shared.ViewModels
 @inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
@@ -35,11 +37,22 @@
 </SpinLoader>
 
 @code {
+    [Inject]
+    private IState<NameState> NameState { get; set; }
 
     private List<List<PizzaVM>> Pizzas = new List<List<PizzaVM>>();
 
     protected override async Task OnInitializedAsync()
     {
+        if (NameState?.Value?.Name == null)
+        {
+            NavigationManager.NavigateTo("/");
+
+            await base.OnInitializedAsync();
+
+            return;
+        }
+
         var data = await HttpClient.GetFromJsonAsync<List<PizzaVM>>("api/pizza/getAll");
 
         var rows = data.Count / 3;
@@ -59,8 +72,25 @@
         await base.OnInitializedAsync();
     }
 
-    private void OrderPizza(int pizzaId)
+    private async Task OrderPizza(int pizzaId)
     {
-        NavigationManager.NavigateTo($"/order/{pizzaId}");
+        var result = await HttpClient
+            .PostAsJsonAsync("api/order/AddOrder", new AddOrderVM { ClientName = NameState.Value.Name, PizzaId = pizzaId });
+
+        if (result.IsSuccessStatusCode)
+        {
+
+            var orderString = await result.Content.ReadAsStringAsync();
+
+            int.TryParse(orderString, out int orderId);
+
+            NavigationManager.NavigateTo($"/order/{orderId}");
+        }
+
+        else
+        {
+            Console.WriteLine(result.StatusCode);
+        }
+
     }
 }

@@ -8,6 +8,9 @@ using Projekt.Server.Db;
 
 using Microsoft.EntityFrameworkCore;
 using MediatR;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.Linq;
+using Projekt.Server.Hubs;
 
 namespace Projekt.Server
 {
@@ -29,14 +32,22 @@ namespace Projekt.Server
                     Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddMediatR(typeof(Startup));
+            services.AddSignalR();
 
             services.AddControllersWithViews();
             services.AddRazorPages();
+            services.AddResponseCompression(opts =>
+            {
+                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+                    new[] { "application/octet-stream" });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseResponseCompression();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -59,6 +70,7 @@ namespace Projekt.Server
             {
                 endpoints.MapRazorPages();
                 endpoints.MapControllers();
+                endpoints.MapHub<OrderHub>("/orderhub");
                 endpoints.MapFallbackToFile("index.html");
             });
         }

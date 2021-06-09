@@ -1,7 +1,8 @@
 ﻿@inherits FluxorLayout
+@using Fluxor
 @using Fluxor.Blazor.Web.Components
 @using Fluxor.Persist.Middleware
-@using Projekt.Client.Stores
+@using Projekt.Client.Stores.NameUseCase
 
 <Layout>
     <LayoutHeader>
@@ -10,9 +11,16 @@
                 <i class="d-inline-block align-top fas fa-pizza-slice mr-2"></i>
                 Pizza store
             </a>
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="#">My orders</a>
+            <ul class="navbar-nav flex-row">
+                @if (!string.IsNullOrWhiteSpace(NameState.Value.Name))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" style="cursor: text">Hi @NameState.Value.Name</a>
+                    </li>
+
+                }
+                <li class="nav-item ml-4 mr-4">
+                    <Blazorise.Link class="nav-link" To="Orders">My orders</Blazorise.Link>
                 </li>
             </ul>
         </nav>
@@ -25,7 +33,11 @@
 </Layout>
 
 @code
-{ protected override void OnInitialized()
+{
+    [Inject]
+    private IState<NameState> NameState { get; set; }
+
+    protected override void OnInitialized()
     {
         base.OnInitialized();
 

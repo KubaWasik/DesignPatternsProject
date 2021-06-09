@@ -1,9 +1,86 @@
 ﻿@page "/"
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@using Fluxor
+@using Projekt.Client.Stores.NameUseCase
+@inject NavigationManager NavigationManager
 
 <DisplayHeading Style="text-align: center; margin-bottom: 2rem;" Size="DisplayHeadingSize.Is1">Hello,<br /> welcome to our pizza store!</DisplayHeading>
 
 <Heading Size="HeadingSize.Is4" Style="margin-bottom: 5rem;">Choose your favorite pizza and we will make one for you</Heading>
 
-<Button Color="Color.Dark" Type="ButtonType.Link" Outline="true" To="/menu">
+@if (NameState?.Value?.Name != null)
+{
+    <Heading Size="HeadingSize.Is4">Active user</Heading>
+    <DisplayHeading Size="DisplayHeadingSize.Is2">@NameState.Value.Name</DisplayHeading>
+    <Button Style="margin-top: 4rem;" Color="Color.Secondary" Type="ButtonType.Link" Outline="true" @onclick="DeleteUser">
+        <Heading Size="HeadingSize.Is4">Change user</Heading>
+    </Button>
+}
+else
+{
+    <Field>
+        <FieldLabel>Name</FieldLabel>
+        <TextEdit Size="Size.ExtraLarge" Placeholder="Enter your name" @bind-Text="@name" />
+    </Field>
+    <Alert Color="Color.Warning" @bind-Visible="@showAlert">
+        <AlertMessage>
+            Name is empty
+        </AlertMessage>
+        <AlertDescription>
+            Please enter your name
+        </AlertDescription>
+        <CloseButton />
+    </Alert>
+}
+
+<Button Style="margin-top: 4rem;" Color="Color.Dark" Type="ButtonType.Link" Outline="true" @onclick="GotoMenu">
     <DisplayHeading Size="DisplayHeadingSize.Is3">Go to menu</DisplayHeading>
 </Button>
+
+@code {
+    [Inject]
+    private IState<NameState> NameState { get; set; }
+
+    [Inject]
+    private IDispatcher Dispatcher { get; set; }
+
+    private string name;
+    private bool showAlert = false;
+
+    private void GotoMenu()
+    {
+        if (!string.IsNullOrWhiteSpace(NameState.Value.Name))
+        {
+            NavigationManager.NavigateTo($"/menu");
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            showAlert = true;
+        }
+        else
+        {
+            var action = new ChangeNameAction
+            {
+                Name = name
+            };
+
+            Dispatcher.Dispatch(action);
+
+            NavigationManager.NavigateTo($"/menu");
+        }
+
+    }
+
+    private void DeleteUser()
+    {
+        var action = new ChangeNameAction
+        {
+            Name = null
+        };
+
+        Dispatcher.Dispatch(action);
+    }
+}

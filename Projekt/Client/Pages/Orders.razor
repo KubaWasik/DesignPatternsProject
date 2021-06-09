@@ -1,0 +1,23 @@
+﻿@page "/orders"
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@using Fluxor
+@using Projekt.Client.Stores.NameUseCase
+@inject NavigationManager NavigationManager
+
+<h3>Orders for @NameState.Value.Name</h3>
+
+@code {
+    [Inject]
+    private IState<NameState> NameState { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        if (NameState?.Value?.Name == null)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+
+        return base.OnInitializedAsync();
+    }
+
+}

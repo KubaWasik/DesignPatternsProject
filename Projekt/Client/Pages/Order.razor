@@ -1,28 +1,125 @@
-﻿@page "/order/{PizzaId:int}"
+﻿@page "/order/{OrderId:int}"
 @inherits Fluxor.Blazor.Web.Components.FluxorComponent
 @using Fluxor
 @using Microsoft.AspNetCore.Components
-@using Projekt.Client.Stores.CounterUseCase
+@using Microsoft.AspNetCore.SignalR.Client
+@using Projekt.Shared.Enums
+@using Projekt.Shared.ViewModels
+@inject NavigationManager NavigationManager
+@inject HttpClient HttpClient
+@implements IAsyncDisposable
 
 <h3>Order</h3>
 
-<p>Counter: @CounterState.Value.ClickCount</p>
-
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<Steps SelectedStep="@selectedStep" SelectedStepChanged="@OnSelectedStepChanged">
+    <Items>
+        <Step Name="Created" Completed="stepIndex > 0" @onclick="_ => null">Created</Step>
+        <Step Name="Accepted" Completed="stepIndex > 1" @onclick="_ => null">Accepted</Step>
+        <Step Name="InPreparation" Completed="stepIndex > 2" @onclick="_ => null">In preparation</Step>
+        <Step Name="InDelivery" Completed="stepIndex > 3" @onclick="_ => null">In delivery</Step>
+        <Step Name="Delivered" Completed="stepIndex == 5" @onclick="_ => null">
+            <Marker>
+                <Icon Name="IconName.PizzaSlice" />
+            </Marker>
+            <Caption>
+                Delivered
+            </Caption>
+        </Step>
+    </Items>
+    <Content>
+        <StepPanel Name="Created">
+            Order was successfully created, our team will soon read it and let you know that order is accepted
+        </StepPanel>
+        <StepPanel Name="Accepted">
+            Order was read by our team and wait in queue for being prepared
+        </StepPanel>
+        <StepPanel Name="InPreparation">
+            Our pizza chef is taking care of your pizza at the moment
+        </StepPanel>
+        <StepPanel Name="InDelivery">
+            Your pizza is ready and our team takes care to deliver it to you as fast as we can
+        </StepPanel>
+        <StepPanel Name="Delivered">
+            Our supplier already delivered your pizza, enjoy your meal!
+        </StepPanel>
+    </Content>
+</Steps>
 
 @code {
     [Parameter]
-    public int PizzaId { get; set; }
+    public int OrderId { get; set; }
 
-    [Inject]
-    private IState<CounterState> CounterState { get; set; }
+    private HubConnection hubConnection;
+    private OrderVM order;
+    string selectedStep = "Created";
+    private int stepIndex;
 
-    [Inject]
-    public IDispatcher Dispatcher { get; set; }
-
-    private void IncrementCount()
+    public async ValueTask DisposeAsync()
     {
-        var action = new IncrementCounterAction();
-        Dispatcher.Dispatch(action);
+        await hubConnection.DisposeAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        order = await HttpClient.GetFromJsonAsync<OrderVM>($"api/order/getOrder?orderId={OrderId}");
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/orderhub"))
+            .Build();
+
+        hubConnection.On<OrderStatus>("ChangeStatus", (orderStatus) =>
+        {
+            order.OrderStatus = orderStatus;
+
+            selectedStep = orderStatus.ToString();
+
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+
+        Console.WriteLine(hubConnection.ConnectionId);
+
+        await TrackOrder();
+    }
+
+    private async Task TrackOrder()
+    {
+        await hubConnection.SendAsync("TrackOrder", OrderId);
+    }
+
+    private Task OnSelectedStepChanged(string name)
+    {
+        switch (name)
+        {
+            case "Created":
+                stepIndex = 0;
+                break;
+
+            case "Accepted":
+                stepIndex = 1;
+                break;
+
+            case "InPreparation":
+                stepIndex = 2;
+                break;
+
+            case "InDelivery":
+                stepIndex = 3;
+                break;
+
+            case "Delivered":
+                stepIndex = 4;
+
+                break;
+
+            default:
+                stepIndex = 5;
+                break;
+        }
+
+        selectedStep = name;
+
+        return Task.CompletedTask;
     }
 }
